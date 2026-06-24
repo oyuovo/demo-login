@@ -1,0 +1,45 @@
+services:
+  mysql:
+    image: mysql:8.4
+    environment:
+      MYSQL_ROOT_PASSWORD: root_dev_password
+      MYSQL_DATABASE: community_gate
+      MYSQL_USER: community_gate
+      MYSQL_PASSWORD: community_gate_dev
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      DB_HOST: mysql
+      DB_PORT: "3306"
+      DB_USER: community_gate
+      DB_PASSWORD: community_gate_dev
+      DB_NAME: community_gate
+      COOKIE_SECRET: dev_cookie_secret_change_in_production
+      LLM_PROVIDER: deepseek
+      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:-sk-placeholder}
+      DEEPSEEK_BASE_URL: https://api.deepseek.com/v1
+      DEEPSEEK_MODEL: deepseek-chat
+      PRIVILEGED_USERNAME: ${PRIVILEGED_USERNAME:-admin}
+      PRIVILEGED_PASSWORD: ${PRIVILEGED_PASSWORD:-admin_dev_password}
+      PORT: "3000"
+      HOST: "0.0.0.0"
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+volumes:
+  mysql_data:
